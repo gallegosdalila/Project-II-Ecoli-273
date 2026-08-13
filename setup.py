@@ -2,6 +2,7 @@
 #run pip install -e . in the terminal to install the package in editable mode.
 #this will avoid path issues when importing
 
+#pip install setuptools
 from setuptools import setup, find_packages
 
 setup( 
