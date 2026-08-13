@@ -1,0 +1,37 @@
+#this file tells Git to ignore all junk files that wont be committed
+#this will help avoid merging issues later on
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Generated outputs (uncomment if you don't want to commit these)
+# results/
+# *.png
+# *.npy
