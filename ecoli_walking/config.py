@@ -1,15 +1,9 @@
 # CHEM 273 Project 2 - Biased Random Walk of E. coli
 # Team: Aleyna, Dalila, Emma, Nisa, Tracy
 
-# config.py: Every tunable number in the simulation, in one place.
+# config.py -- every tunable number in the simulation, in one place.
 # Part 1 of the assignment says shared parameters live in ONE file everyone imports, instead of five hardcoded copies drifting apart. This will be that file.
 # Units are micrometers and seconds throughout, loosely matched to Huo et al. 2021 (their measured run speed was about 10 um/s).
-
-# STILL TO BE ADDED, as later steps require them:
-    # n_iterations, dt      --> run_simulation needs to know how many cycles and how long a sub-step lasts
-    # biased                --> run_unbiased_control flips this to turn the information off
-    # sensing_noise         --> sense, for giving the cell an imperfect receptor
-    # stop_at_source, capture_radius, store_substeps --> optional behaviours the group may or may not turn on
 
 # IMPORTANT NOTE:
 # To CHANGE a value, do NOT edit it here!!! 
@@ -27,30 +21,38 @@ class Config:
 
     # ---- motion ----
     # One chemotaxis cycle = n_tumbles random steps, then one directed run.
-    tumble_step: float = 1.0             # how far one random tumble step moves a bacterium, micromters(um)
-    run_length: float = 5.0              # how far one directed run step moves a bacterium, um. (LONGER than a tumble on purpose, so the bias wins on average and the cell actually climbs)
+    tumble_step: float = 1.0             # how far one random tumble step moves a bacterium, um
+    run_length: float = 5.0              # how far one directed run step moves a bacterium, um --> LONGER than a tumble on purpose, so the bias wins on average and the cell actually climbs
     n_tumbles: int = 4                   # the sampling window --> the "4 * delta t" the assignment asks us to compare across
 
     # ---- chemotaxis decision ----
-    ascend: bool = True                  # True climbs TOWARD higher concentration. The slide says "descent", which would swim cells away from food (ascent to go toawrds higher C food)
-    min_displacement: float = 1e-9       # displacement floor, um --> below this the 4 tumbles cancelled out and dividing by |d|^2 would create HUGE/invalid numbers
-    fallback: str = "previous"           # what to do when the 4 tumbles cancel: "previous" reuses the last run direction, "random" picks a fresh one, "skip" sits still for this cycle
+    ascend: bool = True                  # True climbs TOWARD higher concentration. The slide says "descent", which would swim cells away from food
+    min_displacement: float = 1e-9       # displacement floor, um --> below this the 4 tumbles cancelled out and dividing by |d|^2 would blow up
+    fallback: str = "previous"           # what to do when the 4 tumbles cancel --> "previous" reuses the last run direction, "random" picks a fresh one, "skip" sits still for this cycle
+
+    sensing_noise: float = 0.0           # standard deviation of the noise added to every concentration reading. 0.0 means a PERFECT sensor, which is what we use for the headline result.
+    biased: bool = True                  # False runs the UNBIASED CONTROL: same number of tumbles and runs, but the run direction is picked at random instead of from the gradient estimate.
 
     # ---- population ----
-    n_cells: int = 100                   # N = how many E. coli to simulate
-    start_mode: str = "uniform"          # where the bacteria begin. "uniform" scatters them across the whole domain, "point" stacks them all at start_point, "ring" places them on a circle
+    n_cells: int = 100                   # N --> how many E. coli to simulate
+    n_iterations: int = 200              # I, how many chemotaxis cycles each bacterium performs. One cycle = 4 tumbles + 1 run.
+    start_mode: str = "uniform"          # where the bacteria begin --> "uniform" scatters them across the whole domain, "point" stacks them all at start_point, "ring" places them on a circle
     start_point: tuple[float, float] = (-70.0, -70.0)   # only read when start_mode is "point"
     start_radius: float = 80.0                          # only read when start_mode is "ring"
 
     # ---- boundary ----
     boundary: str = "none"               # "none" leaves the domain unbounded, "reflect" bounces bacteria off the walls, "wrap" teleports them to the opposite edge
-                                         # GROUP DECISION: we chose default "none". Reflect piles cells against the walls and wrap teleports them, 
-                                         # and BOTH distort the distance-from-source histogram, which is our headline figure.
+                                         # GROUP DECISION: default is "none". Reflect piles cells against the walls and wrap teleports them, and BOTH distort the distance-from-source histogram, which is our headline figure.
 
-    # ---- reproducibility ----
+    stop_at_source: bool = False         # False lets bacteria keep moving once they arrive
+    capture_radius: float = 5.0          # only read when stop_at_source is True: how close counts as "arrived", um
+
+    # ---- bookkeeping ----
     seed: int = 0                        # random seed --> ONE generator is built from this in main.py and passed down to everything, so a whole run reproduces from one number
 
-    # Plain dict of every field, so a saved run can record the exact settings it used alongside its data.
+    store_substeps: bool = False         # True keeps EVERY tumble position, not just the end of each cycle
+
+    # Plain dict of every field, so a saved run can record the exact settings it used alongside its data
     def as_dict(self) -> dict:
         return asdict(self)
 
