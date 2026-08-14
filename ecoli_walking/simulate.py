@@ -18,6 +18,15 @@
 # estimate_gradient is the function most likely to be SUBTLY wrong: a sign error still runs and still produces a plausible-looking plot. That is why it is written this early, and why it gets four tests instead of one.
 # Everything after this is either obviously right or obviously broken.
 
+# Still to come, in this order:
+#   choose_run_direction   --> needs Config for ascend and fallback
+#   sense                  --> needs Config for sensing_noise
+#   chemotaxis_cycle       --> needs Population from agents.py
+#   run_simulation         --> needs Config and SimulationResult from contracts.py
+#   run_unbiased_control   --> the baseline that makes run_simulation's result mean anything
+
+
+
 from typing import Tuple
 
 import numpy as np
