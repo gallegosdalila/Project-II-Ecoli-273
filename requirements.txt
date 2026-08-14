@@ -1,0 +1,7 @@
+#this txt file contains list of dependencies for the E.coli package. 
+#It is used to install all dependencies in one command using pip install -r requirements.txt
+
+numpy>=1.24
+matplotlib>=3.7
+scipy>=1.10
+pytest>=7.0
