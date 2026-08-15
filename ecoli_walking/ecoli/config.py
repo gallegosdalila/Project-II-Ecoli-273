@@ -66,3 +66,5 @@ MEDIUM = Config(n_cells=100)
 LARGE = Config(n_cells=1000)
 
 POPULATION_SIZES = (10, 100, 1000)                 # the three N values the assignment asks for
+SNAPSHOT_ITERATIONS = (1, 10, 50, 100, 1000)       # the iteration counts we report statistics and draw histograms at.
+                                                   # Lives here rather than in figures.py so the RESULTS TABLE and the HISTOGRAM FIGURE always show the same I values. Counts past the end of a run are skipped automatically.
