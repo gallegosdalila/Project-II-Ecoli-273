@@ -75,7 +75,7 @@ class Bacterium:
     #straight line movement based on biological movement
     def run(self, direction, length):
         direction = np.array(direction, dtype = float)
-        norm = np.linalb.norm(direction) #compute vectors magnitude
+        norm = np.linalg.norm(direction) #compute vectors magnitude
 
         #check if directional vector is 0, thus you cant normalize!
         if norm == 0:
@@ -89,7 +89,7 @@ class Bacterium:
         self.direction = unit_direction
         self.state = "run"
         #preallocate numpy array space since we set a # of steps ahead of time in constructor
-        self.position_history = np.zeros((max_steps + 1, 2))
+        self.step_count += 1
         self.position_history[self.step_count] = self.position
 
 
