@@ -1,7 +1,7 @@
 # CHEM 273 Project 2 - Biased Random Walk of E. coli
 # Team: Aleyna, Dalila, Emma, Nisa, Tracy
 
-# agents.py -- Section 1. Owner: Dalila.
+# agents.py -- the movement layer.
 # The MOVEMENT layer. This file knows how to move bacteria.
 # It does not know what a concentration is, and it never decides which way to go --> simulate.py works out the direction and hands it in. This file only gets the geometry right.
 

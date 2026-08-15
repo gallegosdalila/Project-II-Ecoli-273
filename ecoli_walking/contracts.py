@@ -1,12 +1,12 @@
 # CHEM 273 Project 2 - Biased Random Walk of E. coli
 # Team: Aleyna, Dalila, Emma, Nisa, Tracy
 
-# contracts.py -- the ONE data structure that crosses section boundaries.
-    # Section 3 (simulate.py) FILLS a SimulationResult in
-    # Section 4 (experiments.py, stats.py) SAVES it and computes statistics on it
-    # Section 5 (plotting.py) READS it to draw the figures
+# contracts.py is complex in terms of crossing file boundaries:
+    # simulate.py FILLS a SimulationResult in
+    # experiments.py SAVES it and stats.py computes statistics on it
+    # plotting.py READS it to draw the figures
 
-# GROUP DECISION (Part 1, "What is in a SimulationResult"): ARRAYS.
+# GROUP DECISION (Part 1, "What is in a SimulationResult"): ARRAYS
     # We chose positions shaped N x T x 2 and concentrations shaped N x T, over "a list of Bacterium objects", because stats.py needs to do vectorized numpy math over the whole population at once.
     # A list of objects would force a Python loop in every single statistic we compute.
 
@@ -30,7 +30,7 @@ class SimulationResult:
     config: Dict[str, Any] = field(default_factory=dict)   # the exact Config used, as a plain dict --> a saved run records its own settings, so we can never wonder which parameters produced a figure
     substeps: Optional[np.ndarray] = None                  # (N, I, n_tumbles+2, 2) the full within-cycle path, or None --> only stored when config['store_substeps'] is True
 
-    # Every array above is PREALLOCATED by run_simulation with np.empty and filled by index. There is no .append anywhere in this package.
+    # Every array above is PREALLOCATED by run_simulation with np.empty and filled by index.
     # default_factory=dict is needed because a plain {} as a default would be SHARED by every SimulationResult ever made --> the factory builds a fresh empty dict each time.
 
 
@@ -45,7 +45,7 @@ class SimulationResult:
     n_iterations = property(n_iterations)
 
 
-    # ---- STEP 24: the derived quantities Section 4 and Section 5 both need ----
+    # ---- STEP 24: the derived quantities stats.py and plotting.py both need ----
 
     # Straight-line distance from every bacterium to ONE source, at EVERY iteration. Returns shape (N, I+1).
     # THIS IS THE HEADLINE MEASUREMENT of the whole project: the assignment asks how the distance-from-source distribution narrows as N and I increase, and this is the array that answers it.
@@ -64,7 +64,7 @@ class SimulationResult:
     def net_displacement(self) -> np.ndarray:
         return self.positions[:, -1, :] - self.positions[:, 0, :]
 
-    # Check the shapes agree BEFORE handing this to another section, so a mistake surfaces at the handoff instead of inside somebody else's figure two hours later.
+    # Check the shapes agree BEFORE handing this to another file, so a mistake surfaces at the handoff instead of inside somebody else's figure two hours later.
     def validate(self) -> None:
         n, t_plus_1, d = self.positions.shape
         assert d == 2, f"positions must be 2D, got last dim {d}"
@@ -75,4 +75,67 @@ class SimulationResult:
         assert np.atleast_2d(self.sources).shape[1] == 2
         assert np.isfinite(self.positions).all(), "non-finite positions --> something divided by zero or diverged"   # catches NaN and inf, which numpy would otherwise carry silently into every plot
 
-SimulationResult = dataclass(SimulationResult)   # dataclass() writes __init__ from the annotations above, so we never hand-write "self.positions = positions" nine times
+
+
+
+
+    # ---- STEP 26: saving and loading, so figures never have to rerun a simulation ----
+
+# RERUNNING SIMULATION FOR EVERY PLOT IS INEFFICIENT:
+    # We can try saving multiple NumPy arrays in a single file with np.savez_compressed() and np.load()
+    # configuration dictionary can be converted to text with JSON
+    # @classmethod can act as an alternative constructor
+    # @dataclass to generate the class constructor automatically
+        # sources: https://numpy.org/doc/stable/user/absolute_beginners.html, https://numpy.org/doc/stable/reference/generated/numpy.savez_compressed.html,
+                 # https://numpy.org/doc/stable/reference/generated/numpy.load.html, https://numpy.org/doc/stable/user/how-to-io.html,
+                 # https://docs.python.org/3/library/json.html, https://docs.python.org/3/reference/compound_stmts.html#the-with-statement,
+                 # https://docs.python.org/3/tutorial/controlflow.html#unpacking-argument-lists, https://docs.python.org/3/library/functions.html#classmethod
+                 # https://docs.python.org/3/library/dataclasses.html
+
+# This step of code lets the program run a simulation once, save all its resulys, and reload them later for analysis/plotting
+    # SimulationResult in memory
+             #↓ save()
+    #compressed results.npz file
+             #↓ load()
+    #new SimulationResult in memory
+
+    # Write everything to ONE compressed .npz file.
+    # experiments.py owns the code that CALLS this, but the FORMAT lives here next to the fields, so save and load can never drift apart and disagree about what is in the file.
+    # .npz is numpy's own zipped archive format: it stores named arrays, compresses them, and loads them back with the exact same dtype and shape.
+    def save(self, path) -> None:
+        import json
+        payload = dict(
+            positions=self.positions,
+            concentrations=self.concentrations,
+            run_directions=self.run_directions,
+            delta_c=self.delta_c,
+            gradient_valid=self.gradient_valid,
+            sources=np.atleast_2d(self.sources),
+            field_name=np.array(self.field_name),            # npz stores ARRAYS, so the string is wrapped in a 0-dimensiomal array to get it through
+            config_json=np.array(json.dumps(self.config)),   # same problem for the config dict --> json.dumps turns it into one string, which then goes in as a 0-d array
+        )
+        if self.substeps is not None:
+            payload["substeps"] = self.substeps              # only written when it exists, so files stay small by default
+        np.savez_compressed(path, **payload)                 # ** unpacks the dict into keyword arguments, so each key becomes the name of an array inside the archive
+
+    # Rebuild a SimulationResult from a file written by save().
+    # Disallow loading pickled Python-object arrays. Pickle deserialization can execute arbitrary code, so allow_pickle=False is safer for untrusted files
+    # allow_pickle stays False so a data file can NEVER execute code when we open it
+    # when allow_pickle is false, the .npz file should contain ordinary NumPy arrays numbrs and booleans rather than arbitrary Python objects
+    def load(cls, path) -> "SimulationResult":
+        import json
+        with np.load(path, allow_pickle=False) as z:         # with allow_pickle=False, avoids unsafe Python-object deserialization. `with` closes the file if error occurs, even half-way through
+            return cls(
+                positions=z["positions"],
+                concentrations=z["concentrations"],
+                run_directions=z["run_directions"],
+                delta_c=z["delta_c"],
+                gradient_valid=z["gradient_valid"],
+                field_name=str(z["field_name"]),             # unwrap the 0-d array back into a normal string
+                sources=z["sources"],
+                config=json.loads(str(z["config_json"])),    # and the json string back into a dict
+                substeps=z["substeps"] if "substeps" in z.files else None,   # z.files lists what is actually in the archive, so an old file saved without substeps still loads
+            )
+    load = classmethod(load)   # classmethod() means it is called on the CLASS: SimulationResult.load(path). It has to be, because there is no instance yet (that is the whole point of loading one)
+
+SimulationResult = dataclass(SimulationResult)   # dataclass() writes __init__ from the annotations above, so we don't have to write "self.positions = positions" multiple times

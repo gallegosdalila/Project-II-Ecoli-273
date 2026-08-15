@@ -1,7 +1,7 @@
 # CHEM 273 Project 2 - Biased Random Walk of E. coli
 # Team: Aleyna, Dalila, Emma, Nisa, Tracy
 
-# simulate.py -- Section 3. Owner: Tracy.
+# simulate.py -- the chemotaxis algorithm.
 # The biased random walk itself. This file owns the DECISION: given what the cell tasted over the last four time steps, which way does it run?
 
 # THE ALGORITHM, one chemotaxis cycle per cell:
@@ -25,10 +25,10 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from .agents import Population, normalize, random_unit_vectors   # Population is NEW in phase 5 --> chemotaxis_cycle drives it
+from .agents import Population, normalize, random_unit_vectors   # chemotaxis_cycle drives Population
 from .config import Config                                       # choose_run_direction needs cfg.ascend and cfg.fallback
-from .contracts import SimulationResult                          # NEW in phase 5 --> run_simulation fills one of these in and hands it to Sections 4 and 5
-from .fields import ConcentrationField                           # NEW in phase 5 --> we finally need to actually SENSE the field, not just take deltas somebody else computed
+from .contracts import SimulationResult                          # run_simulation fills one of these in and hands it to stats.py and plotting.py
+from .fields import ConcentrationField                           # we finally need to actually SENSE the field, not just take deltas somebody else computed
 
 
 # ---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ def _captured(xy: np.ndarray, field: ConcentrationField, cfg: Config) -> np.ndar
 # Four tumbles, one gradient estimate, one directed run, for ALL N bacteria at once. This is steps 1 to 6 of the algorithm at the top of this file, in order.
 # It FALLS OUT of the three pieces already written: estimate_gradient (step 10), Population.tumble/.run (step 18), and choose_run_direction (step 19). Nothing new is invented here, it's just assembly.
     # c_start: the concentration at the CURRENT position, passed in by run_simulation because it already knows it from the end of the previous cycle --> saves sampling the field twice for the same point
-# Returns (new_positions, run_dirs, delta_c, valid, concentration_at_end, path) where path is (N, n_tumbles+2, 2): the start, each tumble, then the run endpoint. Section 5 uses path for trajectory plots.
+# Returns (new_positions, run_dirs, delta_c, valid, concentration_at_end, path) where path is (N, n_tumbles+2, 2): the start, each tumble, then the run endpoint. plotting.py uses path for trajectory plots.
 def chemotaxis_cycle(pop: Population, field: ConcentrationField, rng: np.random.Generator,
                      cfg: Config, c_start: Optional[np.ndarray] = None):
     x0 = pop.positions.copy()                     # .copy() because pop.positions is about to be overwritten by the tumbles, and we need the ORIGINAL to compute the displacement
