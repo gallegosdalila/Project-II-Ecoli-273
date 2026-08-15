@@ -40,7 +40,7 @@ class Config:
     start_point: tuple[float, float] = (-70.0, -70.0)   # only read when start_mode is "point"
     start_radius: float = 80.0                          # only read when start_mode is "ring"
 
-    # ---- boundary ----
+    # ---- boundary ----                    #DALILA: where is the "reflect" portion? or am i missing it?
     boundary: str = "none"               # "none" leaves the domain unbounded, "reflect" bounces bacteria off the walls, "wrap" teleports them to the opposite edge
                                          # GROUP DECISION: default is "none". Reflect piles cells against the walls and wrap teleports them, and BOTH distort the distance-from-source histogram, which is our headline figure.
 
@@ -55,12 +55,13 @@ class Config:
     # Plain dict of every field, so a saved run can record the exact settings it used alongside its data
     def as_dict(self) -> dict:
         return asdict(self)
-
+                                            #DALILA: long-hand notation for decorator instead of @dataclass(frozen=True)
 Config = dataclass(frozen=True)(Config)   # dataclass(frozen=True) returns a decorator, which is then called on the class --> that is why there are two sets of parentheses
 
 
 # Presets, so nobody retypes these in five places.
 DEFAULT = Config()                                 # the settings every module falls back to
+#DALILA: small to large scale simulations with n_cells being over-written form default values for testing
 SMALL = Config(n_cells=10)
 MEDIUM = Config(n_cells=100)
 LARGE = Config(n_cells=1000)

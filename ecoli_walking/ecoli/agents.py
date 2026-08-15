@@ -8,11 +8,11 @@
 # GROUP DECISION (Part 1): For speed we chose to use vectorized arrays rather than python objects.
                          # (we hold all N bacteria as ARRAYS (the Population class), not as N separate Python objects)
 
-from typing import Optional
+from typing import Optional #part of Pythons standard library for Optional[X]
 
 import numpy as np
 
-from .config import Config
+from .config import Config #looks at the config.py class in our package
 
 
 # ---------------------------------------------------------------------------
@@ -26,6 +26,7 @@ from .config import Config
     # n:   how many direction vectors we want
 def random_unit_vectors(rng: np.random.Generator, n: int) -> np.ndarray:
     theta = rng.uniform(0.0, 2.0 * np.pi, size=n)                # theta --> one random heading ANGLE per bacterium, drawn uniformly on [0, 2pi), so no direction is preferred over any other
+    #DALILA: np.stack optimal vs np.array as a safety check for the shape the ecoli takes, if it doesnt match will give error
     return np.stack((np.cos(theta), np.sin(theta)), axis = -1)     # cos and sin of an angle always give a vector of length exactly 1, so we don't have to normalize afterwards. axis = -1 pairs them into (x, y)
 
 
@@ -36,7 +37,7 @@ def random_unit_grid(rng: np.random.Generator, *shape: int) -> np.ndarray:
     return np.stack((np.cos(theta), np.sin(theta)), axis = -1)     # adds the trailing axis of size 2, so (N, 4) angles become (N, 4, 2) vectors
 
 
-# Row-wise normalize: divide every vector by its own lengtth so it becomes length 1, leaving near-zero rows as ZERO instead of NaN
+# Row-wise normalize: divide every vector by its own length so it becomes length 1, leaving near-zero rows as ZERO instead of NaN
 # A zero row means that this bacterium has no direction this cycle, which is a valid state in our model, not an error --> so it must not become NaN and mess-up everything downstream
 def normalize(v: np.ndarray, eps: float = 1e-12) -> np.ndarray:
     norm = np.linalg.norm(v, axis = -1, keepdims = True)                    # length of each row. keepdims = True keeps the trailing axis so the shape is (N, 1) and the division broadcasts against (N, 2)
@@ -101,7 +102,8 @@ class Population:
         # positions   (N, 2)  current x,y of every bacterium
         # directions  (N, 2)  unit vector of the most recent DIRECTED run --> kept so choose_run_direction has something to fall back on when the 4 tumbles cancel
         # state       (N,)    0 = tumbling, 1 = running. (useful for debugging sinngle cell) nothing reads it during run
-
+    
+    #DALILA: __slots__ pre-allocate fixed storage for each attribute listed
     __slots__ = ("positions", "directions", "state", "cfg")   # __slots__ skips the per-object attribute dictionary --> saves memory, and turns a typo like pop.postions = ... into an error instead of a silent bug
 
     def __init__(self, positions: np.ndarray, cfg: Config, rng: Optional[np.random.Generator] = None):
