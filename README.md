@@ -2,11 +2,16 @@
 
 # ecoli_walk
 
-Biased random walk simulation of E. coli chemotaxis.
-
 CHEM 273 | Project 2
 
-Aleyna Nur Celebi, Nisa Nur Celebi, Tracy Doumit, Dalila Zamantha Gallegos, Emma Patrichi 
+Biased random walk simulation of E. coli chemotaxis.
+
+**Team Members:** <br>
+Aleyna Nur Celebi <br>
+Nisa Nur Celebi <br>
+Tracy Doumit <br>
+Dalila Zamantha Gallegos <br>
+Emma Patrichi <br>
 
 ## Status
 
