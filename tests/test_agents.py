@@ -38,11 +38,28 @@ def test_tumble_direction():
     assert np.isclose(np.linalg.norm(b.direction), 1.0)
 
 def test_runStep_length():
+    #create bacterium object by calling the class at position [0,0] & stored in variable b 
     b = Bacterium(position = [0,0])
-    start = b = b.position.copy()
-    b.run(direction = [0,0], length = 2.5)
+    start = b = b.position.copy() 
+    b.run(direction = [0,0], length = 2.5) #direction/length for the run
     assert np.isclose(np.linalg.norm(b.position - start), 2.5)
 
+#check if using the same random seed will give the same result
+def test_fixedSeed_reproducible():
+    #use same seed for each rng
+    rng1 = np.random.default_rng(42)
+    rng2 = np.random.default_rng(42)
+    #b1 abd b1 creates a bacterium using the class 
+    b1 = Bacterium(position = [0,0], rng = rng1)
+    b2 = Bacterium(position = [0,0], rng = rng2)
+    #compare two arrays x to x and y to y positions and confirms every pair is close enough 
+    assert np.allclose(b1.direction, b2.direction)
+
+def test_history_updates_run_tumble():
+    b = Bacterium(position = [0,0])
+    b.run(direction = [1,0], length = 1.0)
+    b.tumble()
+    assert len(b.position_history) == 3 #init + run + tumble
 
 
 

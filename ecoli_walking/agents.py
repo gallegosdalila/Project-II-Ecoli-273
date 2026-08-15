@@ -59,7 +59,7 @@ class Bacterium:
         if rng is not None:
             r = rng
         else:
-            self.rng
+            r = self.rng
 
         angle = r.uniform(0, 2*np.pi)
 
