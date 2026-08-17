@@ -10,7 +10,7 @@
     # 3. dC = C4 - C0 is exactly the "C(t) versus C(t - 4*dt)" comparison the assignment asks for, and d = x4 - x0 is the displacement those 4 tumbles produced.
     # 4. The directional derivative along d is dC / |d|, so the minimum-norm vector g satisfying g . d = dC is  g_est = (dC / |d|^2) * d
        # This is the best estimate of grad C available from a single directional sample, and on a linear field it equals the exact projection of the true gradient onto d.
-    # 5. Run one directed step along +g_est for ascent. Because normalizing g_est just recovers sign(dC) * d_hat, the rule in plain language is:
+    # 5. Run one directed step along +g_est for ascent. b/c normalizing g_est just recovers sign(dC) * d_hat, the rule in plain language is:
        # "if it got better, keep going that way; if it got worse, turn around." That is what real E. coli do, and it is two lines of numpy.
     # 6. If |d| is essentially zero, the four tumbles cancelled and dC/|d|^2 would blow up, so fall back to some other direction.
 
@@ -78,7 +78,7 @@ def directional_derivative(delta_c: np.ndarray, displacement: np.ndarray, min_di
     # previous: (N, 2)      each bacterium's most recent run direction, kept by Population --> this is what the "previous" fallback reuses
     # rng:      the shared generator, only touched if the fallback is "random"
     # cfg:      supplies ascend (which way is "better") and fallback (what to do with an untrustworthy estimate)
-# Ascent uses +g_est, descent uses -g_est. Because normalizing g_est just recovers sign(dC) * d_hat. Prety much if it got better keep going, if it gets worse turn around
+# Ascent uses +g_est, descent uses -g_est. b/c normalizing g_est just recovers sign(dC) * d_hat. Prety much if it got better keep going, if it gets worse turn around
 def choose_run_direction(g_est: np.ndarray, valid: np.ndarray, previous: np.ndarray,
                          rng: np.random.Generator, cfg: Config) -> np.ndarray:
     sign = 1.0 if cfg.ascend else -1.0                              # sign --> +1 climbs toward food, -1 swims away from it. One number flips the whole population's behaviour.
@@ -95,7 +95,7 @@ def choose_run_direction(g_est: np.ndarray, valid: np.ndarray, previous: np.ndar
         raise ValueError(f"unknown fallback: {cfg.fallback!r}")
 
     return np.where(usable[:, None], unit, backup)           # usable[:, None] is (N, 1), so the choice is made per bacterium and applies to BOTH its x and y components
-    # In practice this fallback fires 0 times in 10^6 cycles, because four random unit steps essentially never cancel exactly. (The guard still has to exist, or the one time it happens we divide by ~0 and get NaN.)
+    # In practice this fallback fires 0 times in 10^6 cycles, b/c four random unit steps essentially never cancel exactly. (The guard still has to exist, or the one time it happens we divide by ~0 and get NaN.)
 
 
 # ---------------------------------------------------------------------------
@@ -103,12 +103,12 @@ def choose_run_direction(g_est: np.ndarray, valid: np.ndarray, previous: np.ndar
 # ---------------------------------------------------------------------------
 
 # Read the concentration at a set of positions, optionally with noise on the reading.
-    # field: any ConcentrationField (linear, single_source, competing_sources) --> we only ever call .concentration(), NEVER .gradient(), because a real cell can't perceive a gradient
+    # field: any ConcentrationField (linear, single_source, competing_sources) --> we only ever call .concentration(), NEVER .gradient(), b/c a real cell can't perceive a gradient
     # xy:    (..., 2) positions
     # cfg:   supplies sensing_noise
 # sensing_noise defaults to 0.0, so this is a PERFECT sensor unless the group turns it on. Real E. coli receptors are noisy, and Huo et al. showed that noise is what produces the Levy walk, so this is the hook for that experiment.
 def sense(field: ConcentrationField, xy: np.ndarray, rng: np.random.Generator, cfg: Config) -> np.ndarray:
-    c = field.concentration(xy)                                     # ONE call handles all N bacteria at once, because of the (..., 2) shape contract in fields.py
+    c = field.concentration(xy)                                     # ONE call handles all N bacteria at once, b/c of the (..., 2) shape contract in fields.py
     if cfg.sensing_noise > 0.0:
         c = c + rng.normal(0.0, cfg.sensing_noise, size=c.shape)    # add a normally-distributed error to every reading, drawn from the same shared generator so noisy runs are still reproducible
     return c
@@ -126,12 +126,12 @@ def _captured(xy: np.ndarray, field: ConcentrationField, cfg: Config) -> np.ndar
 # ---------------------------------------------------------------------------
 
 # Four tumbles, one gradient estimate, one directed run, for ALL N bacteria at once. This is steps 1 to 6 of the algorithm at the top of this file, in order.
-# It FALLS OUT of the three pieces already written: estimate_gradient (step 10), Population.tumble/.run (step 18), and choose_run_direction (step 19). Nothing new is invented here, it's just assembly.
-    # c_start: the concentration at the CURRENT position, passed in by run_simulation because it already knows it from the end of the previous cycle --> saves sampling the field twice for the same point
+# It FALLS OUT of the three pieces already written: estimate_gradient (step 10), Population.tumble/.run (step 18), and choose_run_direction (step 19)
+    # c_start: the concentration at the CURRENT position, passed in by run_simulation b/c it already knows it from the end of the previous cycle --> saves sampling the field twice for the same point
 # Returns (new_positions, run_dirs, delta_c, valid, concentration_at_end, path) where path is (N, n_tumbles+2, 2): the start, each tumble, then the run endpoint. plotting.py uses path for trajectory plots.
 def chemotaxis_cycle(pop: Population, field: ConcentrationField, rng: np.random.Generator,
                      cfg: Config, c_start: Optional[np.ndarray] = None):
-    x0 = pop.positions.copy()                     # .copy() because pop.positions is about to be overwritten by the tumbles, and we need the ORIGINAL to compute the displacement
+    x0 = pop.positions.copy()                     # .copy() b/c pop.positions is about to be overwritten by the tumbles, and we need the ORIGINAL to compute the displacement
     if c_start is None:
         c_start = sense(field, x0, rng, cfg)      # normally run_simulation passes this in; this branch only runs if somebody calls chemotaxis_cycle on its own
 
@@ -154,7 +154,7 @@ def chemotaxis_cycle(pop: Population, field: ConcentrationField, rng: np.random.
 
     if cfg.stop_at_source:
         captured = _captured(x4, field, cfg)
-        run_dir = np.where(captured[:, None], 0.0, run_dir)   # a zero direction freezes the bacteria that have arrived, because Population.run() treats zero as "don't move"
+        run_dir = np.where(captured[:, None], 0.0, run_dir)   # a zero direction freezes the bacteria that have arrived, b/c Population.run() treats zero as "don't move"
 
     pop.run(run_dir)
     c_final = sense(field, pop.positions, rng, cfg)
@@ -179,7 +179,7 @@ def run_simulation(field: ConcentrationField, cfg: Config,
 
     pop = Population.from_config(cfg, rng)
 
-    positions = np.empty((n, iters + 1, 2))       # +1 because index 0 holds the STARTING position, before any cycle has run
+    positions = np.empty((n, iters + 1, 2))       # +1 b/c index 0 holds the STARTING position, before any cycle has run
     concentrations = np.empty((n, iters + 1))
     run_directions = np.empty((n, iters, 2))
     delta_c = np.empty((n, iters))
@@ -189,8 +189,8 @@ def run_simulation(field: ConcentrationField, cfg: Config,
     positions[:, 0, :] = pop.positions
     concentrations[:, 0] = sense(field, pop.positions, rng, cfg)
 
-    # THE ONE UNAVOIDABLE PYTHON LOOP: cycle i+1 depends on where cycle i left the bacteria, so it cannot be vectorized away.
-    # But it costs only O(iters) passes, and each pass does O(N) work inside numpy --> 1000 passes over 1000 bacteria, not 1,000,000 separate operations.
+                       
+    # This loop costs only O(iters) passes, and each pass does O(N) work inside numpy --> 1000 passes over 1000 bacteria, not 1,000,000 separate operations (can't vectorize)
     for i in range(iters):
         xy, u, dc, valid, c, path = chemotaxis_cycle(pop, field, rng, cfg, c_start=concentrations[:, i])   # last cycle's ENDING concentration is this cycle's STARTING one, so the field is never sampled twice for the same point
         positions[:, i + 1, :] = xy
@@ -222,7 +222,7 @@ def run_simulation(field: ConcentrationField, cfg: Config,
 
 # Same bacteria, same number of tumbles, same run length --> but the run direction is chosen at RANDOM instead of from the gradient estimate
     # Until the control exists, "the bacteria moved toward the source" is UNFALSIFIABLE meaning a bug that walked every cell toward the origin no matter what the feild looked like would pass every test written so far (FIXED HERE)
-    # test_biased_beats_unbiased_control is the first test that could actually catch that, because the control has the identical bug and would move identically.
+    # test_biased_beats_unbiased_control is the first test that could actually catch that, b/c the control has the identical bug and would move identically.
 # replace() returns a NEW Config with biased=False and leaves the original untouched, which is why cfg can be safely reused for the biased run.
 def run_unbiased_control(field: ConcentrationField, cfg: Config,
                          rng: Optional[np.random.Generator] = None) -> SimulationResult:
