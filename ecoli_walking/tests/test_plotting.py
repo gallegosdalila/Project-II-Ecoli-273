@@ -140,9 +140,9 @@ def test_figures_raise_when_results_are_missing(tmp_path):
 
 def competing_results():
     field = CompetingSources( centers= ((-50.0, 0.0), (50.0, 0.0)), amplitudes= (100.0, 100.), sigmas= (20.0, 20.0))
-    cfg = replace(CFG, n_cells=200,m ,start_mode="uniform", domain_half_width=90.0)
+    cfg = replace(CFG, n_cells=200, start_mode="uniform", domain_half_width=90.0)
     return run_simulation(field, cfg, np.random.default_rng(0))
-competing_results = pytest.fixture(scope="modeule")(competing_results)
+competing_result = pytest.fixture(scope="module")(competing_results)
 
 def test_plot_population_split_labels_each_source(competing_result):
     ax = P.plot_population_split(competing_result)
