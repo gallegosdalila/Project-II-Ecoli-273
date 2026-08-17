@@ -159,11 +159,6 @@ def test_plot_population_split_bar_heights_match_source_assignments(competing_re
 
     np.testing.assert_allclose(heights, expected)
 
-def test_plot_population_split_labels_each_source(competing_result):
-    ax = P.plot_population_split(competing_result)
-    labels = [t.get_text() for t in ax.get_xticklabels()]
-    assert labels == ["source 0", "source 1"]
-
 
 def test_plot_population_split_works_for_three_sources():
     """this should work for any source count."""

@@ -47,15 +47,8 @@ def animate_walk( result: SimulationResult, save_path: str, field: Optional[Conc
     #  change from frame to frame.
     dots = ax.scatter(positions[:, 0, 0], positions[:, 0, 1], c="white", edgecolors="black", zorder=5,)
 
-    label = ax.text( 0.02, 0.98, "",
-        transform=ax.transAxes,
-        va="top",
-        bbox=dict(
-            facecolor="white",
-            alpha=0.8,
-            edgecolor="none",
-        ),
-    )
+    label = ax.text( 0.02, 0.98, "", transform=ax.transAxes, va="top",
+        bbox=dict( facecolor="white", alpha=0.8, edgecolor="none",),x)
 
     ax.set_title(f"E. coli chemotaxis (N shown = {n_show})")
 
