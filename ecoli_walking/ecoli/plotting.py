@@ -179,3 +179,24 @@ def plot_biased_vs_control(biased: SimulationResult, control: SimulationResult, 
     ax.set(xlabel="chemotaxis cycle I", ylabel="mean distance to source (um)", title="Biased run-and-tumble vs unbiased control")
     ax.legend()
     return ax
+
+#update: bar chart: how many bacteria ended up nearest to each source,at the final iteration
+#replaces the inline "final[:,0] <0" chec in build_notebook.py =, which only works for exactly sources placed left/right of x=0.This is built 
+#nearest_source_index() instead, so it works for any number of sources in any layout
+
+def plot_population_split(result: SimulationResult, ax= None):
+    ax=_ax(ax)
+
+    idx = result.nearest_source_index()[:, -1]
+    n_sources = np.atleast_2d(result.sources).shape[0]
+
+    counts = np.bincount(idx, minlength=n_sources)
+    fractions = counts / counts.sum()
+
+    bars = ax.bar( [f"source {s}" for s in range (n_sources)], fractions, color="steelblue", edgecolor="black",)
+    for bar, count, frac in zip(bars, counts, fractions):
+        ax.text(bar.get_x() + bar.get_width() / 2, frac, f"{count}\n ({frac:.0%})", ha="center", va="bottom", fontsize=9)
+        ax.set (ylabel="fraction of population", title=f"Population split across sources (N={result.n_cells})")
+        ax.set_ylim(0, 1.05)
+
+        return ax

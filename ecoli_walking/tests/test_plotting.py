@@ -133,3 +133,75 @@ def test_figures_raise_when_results_are_missing(tmp_path):
     from ecoli import figures
     with pytest.raises(FileNotFoundError):
         figures.figure_trajectories(tmp_path, tmp_path, "single_source")
+
+#plot_population_split
+#competing_course has more than one source, and the population can converge on either peak, these check that the spli 
+#is being reported correctly
+
+def competing_results():
+    field = CompetingSources( centers= ((-50.0, 0.0), (50.0, 0.0)), amplitudes= (100.0, 100.), sigmas= (20.0, 20.0))
+    cfg = replace(CFG, n_cells=200,m ,start_mode="uniform", domain_half_width=90.0)
+    return run_simulation(field, cfg, np.random.default_rng(0))
+competing_results = pytest.fixture(scope="modeule")(competing_results)
+
+def test_plot_population_split_labels_each_source(competing_result):
+    ax = P.plot_population_split(competing_result)
+    labels = [t.get_text() for t in ax.get_xticklabels()]
+    assert labels == ["source 0", "source 1"]
+
+def test_plot_population_split_bar_heights_match_source_assignments(competing_result):
+    ax = P.plot_population_split(competing_result)
+
+    heights = np.array([bar.get_height() for bar in ax.patches])
+
+    idx = competing_result.nearest_source_index()[:, -1]
+    expected = np.bincount(idx, minlength=2) / competing_result.n_cells
+
+    np.testing.assert_allclose(heights, expected)
+
+def test_plot_population_split_labels_each_source(competing_result):
+    ax = P.plot_population_split(competing_result)
+    labels = [t.get_text() for t in ax.get_xticklabels()]
+    assert labels == ["source 0", "source 1"]
+
+
+def test_plot_population_split_works_for_three_sources():
+    """this should work for any source count."""
+    field = CompetingSources(centers=((-50.0, 0.0), (50.0, 0.0), (0.0, 60.0)),
+                             amplitudes=(100.0, 100.0, 100.0), sigmas=(15.0, 15.0, 15.0))
+    cfg = replace(CFG, n_cells=150, start_mode="uniform", domain_half_width=90.0)
+    r = run_simulation(field, cfg, np.random.default_rng(1))
+    ax = P.plot_population_split(r)
+    assert len(ax.patches) == 3
+
+
+def test_population_split_plotting_never_runs_a_simulation(monkeypatch, competing_result):
+    """same guard rail as test_plotting_never_runs_a_simulation above, extended to the new function."""
+    import ecoli.simulate as sim
+    monkeypatch.setattr(sim, "run_simulation", lambda *a, **k:
+                        pytest.fail("plotting called run_simulation"))
+    P.plot_population_split(competing_result)
+
+
+def test_figure_population_split_included_for_competing_sources_only(tmp_path):
+    from ecoli import figures
+    cfg = replace(CFG, n_iterations=30)
+
+    single_runner = ExperimentRunner("single_source", cfg, tmp_path / "results")
+    for n in (10, 100, 1000):
+        single_runner.run_one(n, seed=0, biased=True)
+    single_runner.run_one(1000, seed=0, biased=False)
+
+    competing_cfg = replace(cfg, domain_half_width=90.0)
+    competing_runner = ExperimentRunner("competing_sources", competing_cfg, tmp_path / "results")
+    for n in (10, 100, 1000):
+        competing_runner.run_one(n, seed=0, biased=True)
+    competing_runner.run_one(1000, seed=0, biased=False)
+
+    single_made = figures.build_all(results_dir=tmp_path / "results", fig_dir=tmp_path / "figures_single",
+                                    field_name="single_source", seed=0)
+    competing_made = figures.build_all(results_dir=tmp_path / "results", fig_dir=tmp_path / "figures_competing",
+                                       field_name="competing_sources", seed=0)
+
+    assert not any("population_split" in p.name for p in single_made)
+    assert any("population_split" in p.name for p in competing_made)

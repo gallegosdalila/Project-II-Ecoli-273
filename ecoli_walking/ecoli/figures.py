@@ -102,7 +102,20 @@ def build_all(results_dir="results", fig_dir="figures", field_name="single_sourc
     figure_narrowing(results_dir, fig_dir, field_name, seed=seed)
     figure_population_sweep(results_dir, fig_dir, field_name, seed=seed)
     figure_control(results_dir, fig_dir, field_name, seed=seed)
+    if len(make_field(field_name).sources) > 1:# same count all the sources check main.py uses for nearest 
+        figure_population_split(results_dir, fig_dir, field_name, seed=seed)
     return sorted(fig_dir.glob("*.png"))
+
+#figure 7: for a field with more than one source, which source each bacterium ended up closet to
+#only called from build_all, when the field has multiple sources 
+#for single_soure/shallow, where every bacterium would trivially show as "100 % source 0 "
+
+def figure_population_split(results_dir, fig_dir: Path, field_name: str, n_cells: int= 1000, seed: int = 0,):
+    result = _load(results_dir, field_name, n_cells, seed, biased=True)
+    fig, ax = plt.subplots()
+    P.plot_population_split(result, ax=ax)
+    fig.savefig(fig_dir / f"fig7_population_split_{field_name}.png")
+    plt.close(fig)
 
 
 def main(argv=None):
