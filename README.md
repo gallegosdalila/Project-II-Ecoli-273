@@ -260,7 +260,7 @@ A real cell cannot perceive a gradient — it has one sensor and can only compar
 ## live animation 
 
 ```bash
-python -m ecoli.animation --field competing_sources --n 30 --n-show 20 --iters 100 --save walk.gif
+python -m ecoli.animation --field competing_sources --n 30 --n-show 20 --iters 100 --save walk.gif 
 ``` 
 
 Saves a GIF: bacteria as moving dots, source(s) marked distinctly, current cycle shown as on-plot text. One frame per completed chemotaxis cycle, written with a plain `for` loop (not `matplotlib.animation.FuncAnimation`) so it's easy to read top to bottom. Lives in `ecoli/animation.py`, kept separate from `plotting.py` on purpose : `plotting.py`'s own test enforces "never runs a simulation, never needs more than a plain Axes," and an animation needs a video writer and (optionally) `tqdm`, which is different enough machinery to warrant its own file. Nothing else in the project imports it, so it's entirely optional : the rest of the pipeline and test suite are unaffected whether or not `tqdm`/`pillow` are installed.
