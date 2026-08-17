@@ -11,8 +11,6 @@
 
 # If a needed .npz is MISSING this raises instead of quietly running a simulation, so a figure can never silently disagree with the numbers in the results table.
 
-# THIS FILE IS PHASE 7 -- step 36 of the build order.
-
 import argparse
 from pathlib import Path
 
