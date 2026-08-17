@@ -8,9 +8,6 @@
     # test_plotting.py has a test that FAILS if this file ever calls run_simulation, because if plotting could rerun the simulation then a figure and the results table could quietly come from two DIFFERENT runs and nobody would notice.
     # If a plotting function needs data it does not have, the fix belongs in experiments.py, not here.
 
-# THIS FILE IS PHASE 7 -- steps 31 to 35 of the build order.
-# It comes last because a figure of a broken simulation is just a prettier way to be wrong. Everything it draws has already been checked numerically by stats.py and the test suite.
-
 from typing import Dict, Optional, Sequence
 
 import matplotlib.pyplot as plt
