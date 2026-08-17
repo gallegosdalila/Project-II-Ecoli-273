@@ -100,21 +100,6 @@ Expected: **89 passed**.
 
 ---
 
-## Bug fix: nearest-source measurement for `competing_sources`
-
-`distance_trace` and `snapshot_stats` always supported measuring distance to whichever source is closest (`nearest=True`), but `chemotactic_drift`, `fraction_within`, and the CLI itself did not: they always measured distance to source 0, with no way to opt out. For `competing_sources`, that silently misread a bacterium that converged on the *second* peak as having failed to converge at all.
-
-`main.py` now auto-detects `nearest` from the field's source count, so single-source fields are completely unaffected. Before/after on `competing_sources`, N = 300, same seed:
-
-| | `dI` (mean final distance) | variance |
-|---|---|---|
-| Before (source 0 only) | 53.55 | 2299.75 |
-| After (nearest source) | 4.08 | 3.35 |
-
-Same simulation, same seed. The population was converging tightly the whole time; the old measurement just couldn't see it.
-
----
-
 ## 4. Live animation
 
 ```bash
@@ -128,6 +113,21 @@ No extra install needed: Pillow ships as one of matplotlib's own dependencies, a
 ---
 
 <br>
+
+### Bug fix: nearest-source measurement for `competing_sources`
+
+`distance_trace` and `snapshot_stats` always supported measuring distance to whichever source is closest (`nearest=True`), but `chemotactic_drift`, `fraction_within`, and the CLI itself did not: they always measured distance to source 0, with no way to opt out. For `competing_sources`, that silently misread a bacterium that converged on the *second* peak as having failed to converge at all.
+
+`main.py` now auto-detects `nearest` from the field's source count, so single-source fields are completely unaffected. Before/after on `competing_sources`, N = 300, same seed:
+
+| | `dI` (mean final distance) | variance |
+|---|---|---|
+| Before (source 0 only) | 53.55 | 2299.75 |
+| After (nearest source) | 4.08 | 3.35 |
+
+Same simulation, same seed. The population was converging tightly the whole time; the old measurement just couldn't see it.
+
+---
 
 ## Files
 
