@@ -1,4 +1,94 @@
-If a needed `.npz` is missing this raises `FileNotFoundError` and prints the exact command to produce it. It will never quietly rerun a simulation, because then a figure and the results table could come from two different runs.
+# CHEM 273 — Project 2: Biased Random Walk of E. coli
+
+**Team:** Aleyna Celebi, Dalila Gallegos, Emma Patrichi, Nisa Celebi, Tracy Doumit
+
+A vectorized simulation of *E. coli* chemotaxis. Each bacterium alternates four random tumble steps with one directed run, choosing the run direction by comparing the concentration it senses now against the concentration four time steps ago — the same information a real cell has.
+
+---
+
+## Install
+
+```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Requires numpy, matplotlib, pytest.
+
+---
+
+## How to run
+
+Two commands reproduce every number and every figure from a clean checkout.
+
+### 1. Run the simulations
+
+```bash
+python -m ecoli.main --field single_source --n 10 100 1000 --iters 200 --control --store-substeps
+```
+
+**Inputs**
+
+| flag | meaning | default |
+|---|---|---|
+| `--field` | which concentration profile: `shallow`, `linear`, `single_source`, `competing_sources` | `single_source` |
+| `--n` | population sizes to run, space separated | `10 100 1000` |
+| `--iters` | chemotaxis cycles per bacterium (I) | `200` |
+| `--seed` | random seed | `0` |
+| `--seeds` | several seeds instead of one, for error bars | — |
+| `--control` | also run the unbiased control | off |
+| `--descend` | move *down* the gradient instead of up | off |
+| `--store-substeps` | keep every tumble position (needed for the trajectory figure) | off |
+| `--boundary` | `none`, `reflect`, or `wrap` | `none` |
+| `--out` | folder for the `.npz` files | `results` |
+
+**Expected output**
+
+```
+field=single_source  iters=200  direction=ascent
+     N  seed     mode       d0       dI    drift
+------------------------------------------------
+    10     0   biased    85.95     5.07    0.404
+    10     0  control    85.95   104.83   -0.094
+   100     0   biased    81.11     3.97    0.386
+   100     0  control    81.11    97.92   -0.084
+  1000     0   biased    77.04     4.04    0.365
+  1000     0  control    77.04   100.72   -0.118
+
+distance-from-source statistics, N = 1000
+     I      mean    median       std        var
+     1     74.10     77.30     28.73     825.38
+    10     47.98     49.56     27.01     729.78
+    50      4.08      4.01      1.83       3.35
+   100      3.97      3.89      1.77       3.12
+
+results written to results/
+next:  python -m ecoli.figures --results results --field single_source
+```
+
+`d0` is the mean starting distance from the source, `dI` the mean final distance, `drift` the µm closed per cycle. The biased population closes from 77 µm to 4 µm; the unbiased control, with the identical step budget, drifts out to 101 µm. Runtime is about 6 seconds.
+
+### 2. Build the figures
+
+```bash
+python -m ecoli.figures --results results --field single_source
+```
+
+**Expected output**
+
+```
+figures/fig1_fields.png                      the three concentration profiles
+figures/fig2_trajectories_single_source.png  20 sample paths over the field
+figures/fig3_narrowing_single_source.png     distance histograms at I = 1, 10, 50, 100
+figures/fig4_compare_N_single_source.png     the same histogram at N = 10, 100, 1000
+figures/fig5_convergence_single_source.png   mean distance vs iteration, one band per N
+figures/fig6_control_single_source.png       biased vs unbiased control
+figures/fig7_population_split_{field}.png    which source each bacterium
+                                             converged on (only for multi-source fields, such as competing_sources)
+```
+
+If a needed `.npz` is missing this raises `FileNotFoundError` and prints the exact command to produce it — it will never quietly rerun a simulation, because then a figure and the results table could come from two different runs.
 
 ### 3. Run the tests
 
