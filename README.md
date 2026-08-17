@@ -6,8 +6,10 @@ A vectorized simulation of *E. coli* chemotaxis. Each bacterium alternates four 
 
 ---
 
-NOTE: make sure you enter location: <br>
-cd ~Project-II_Ecoli-273/ecoli_walking
+```bash
+git clone https://github.com/<your-username>/Project-II_Ecoli-273.git
+cd Project-II_Ecoli-273/ecoli_walking
+```
 
 ---
 
