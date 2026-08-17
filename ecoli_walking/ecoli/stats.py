@@ -86,16 +86,11 @@ def snapshot_stats(result: SimulationResult, iterations: Iterable[int], nearest:
 # Compute mean squared displacement using the standard MSD definition; 
 # this analysis was included for a qualitative comparison with Huo et al. Figure 2, but the Python implementation is specific to our simulation data
 
-# Ensemble-averaged MEAN SQUARED DISPLACEMENT versus lag time, for comparison with Huo et al. Fig 2.
+# Calculate mean squared displacement (MSD) at every possible lag by averaging squared movement over all bacteria and valid starting times
     # They fit MSD = D * t^alpha and measured alpha = 1.66 for wild-type cells (SUPERdiffusive, spreading faster than a normal random walk) and alpha = 1.09 for the mutant with no signalling noise (normal diffusion)
-    # Huo et al. use a similar MSD analysis in Figure 2, but our comparison is qualitative because our model uses 2D cycle endpoints and does not explicitly simulate CheY-P dynamics.
+    # Huo et al. use similar MSD analysis in Fig 2, but our comparison is qualitative b/c our model uses 2D cycle endpoints and does not explicitly simulate CheY-P dynamics
     # Our model has NO CheY-P signalling noise, so in a homogeneous field we would expect alpha near 1
 # "Lag" is measured in chemotaxis cycles rather than seconds because result.positions stores each bacterium's position at the end of every cycle.
-
-# Calculate mean squared displacement (MSD) at every possible lag by averaging squared movement over all bacteria and all valid starting times.
-# MSD can later be fit to MSD proportional to lag^alpha, where alpha near 1 indicates normal diffusion and alpha greater than 1 indicates superdiffusion.
-# Huo et al. use a similar MSD analysis in Figure 2, but our comparison is qualitative because our model uses 2D cycle endpoints and does not explicitly simulate CheY-P dynamics.
-# Lag is measured in chemotaxis cycles rather than seconds because result.positions stores each bacterium's position at the end of every cycle.
 def mean_squared_displacement(result: SimulationResult) -> np.ndarray:
     pos = result.positions                    # (N, T, 2)
     n_lags = pos.shape[1]
