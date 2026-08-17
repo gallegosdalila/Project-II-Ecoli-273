@@ -84,6 +84,8 @@ figures/fig3_narrowing_single_source.png     distance histograms at I = 1, 10, 5
 figures/fig4_compare_N_single_source.png     the same histogram at N = 10, 100, 1000
 figures/fig5_convergence_single_source.png   mean distance vs iteration, one band per N
 figures/fig6_control_single_source.png       biased vs unbiased control
+figures/fig7_population_split_{field}.png    which source each bacterium
+                                             converged on (only for multi-source fields, such as competing_sources)
 ```
 
 If a needed `.npz` is missing this raises `FileNotFoundError` and prints the exact command to produce it — it will never quietly rerun a simulation, because then a figure and the results table could come from two different runs.
@@ -112,7 +114,7 @@ Expected: **76 passed**.
 | `ecoli/plotting.py` | Draws one figure onto one axes. Never runs a simulation. |
 | `ecoli/figures.py` | Regenerates all six report figures from saved results. |
 | `ecoli/main.py` | Command line entry point. |
-| `tests/` | 76 tests across the five modules. |
+| `tests/` | 82 tests across the five modules. |
 
 Data flow: `main.py` → `experiments.py` → `simulate.py` → `results/*.npz` → `figures.py` → `figures/*.png`
 
@@ -192,6 +194,9 @@ A real cell cannot perceive a gradient — it has one sensor and can only compar
 | `.n_cells`, `.n_iterations` | Shape helpers so callers never count axes by hand. |
 | `.distances_to_source` | Distance from every bacterium to the source at every iteration — the headline measurement. |
 | `.distances_to_nearest_source` | Same, but to whichever source is closest; needed for competing sources. |
+| `._distances_to_each_source` | distance from every bacterium to every source, shape (N, I+1, S); shared by the two rows below so they can't drift apart. |
+| `.distances_to_nearest_source` | Same, but to whichever source is closest; needed for competing sources. |
+| `.nearest_source_index` | which source is closest to each bacterium. Replaces an inline check that only worked when sources sat left/right of x=0; works for any layout. |
 | `.net_displacement` | Start-to-finish vector per bacterium, which shows the net drift. |
 | `.validate` | Checks every array shape agrees before the result is handed to another file. |
 | `.save` / `.load` | Writes and reads one compressed `.npz`, so figures never rerun a simulation. |
@@ -204,8 +209,8 @@ A real cell cannot perceive a gradient — it has one sensor and can only compar
 | `distance_trace` | The same statistics at every iteration, returning std and SEM separately. |
 | `snapshot_stats` | `distance_stats` at each requested I, skipping any past the end of the run. |
 | `mean_squared_displacement` | MSD vs lag, for comparison with Huo et al. Fig 2. |
-| `chemotactic_drift` | Mean µm closed per cycle — the cleanest single number separating biased from control. |
-| `fraction_within` | Share of the population inside a given radius of the source. |
+| `chemotactic_drift` | Mean µm closed per cycle — the cleanest single number separating biased from control.; `nearest=True` measures against whichever source is closest instead of always source 0 |
+| `fraction_within` | Share of the population inside a given radius of the source.; same nearest fix as above |
 
 ### `experiments.py`
 
@@ -230,6 +235,7 @@ A real cell cannot perceive a gradient — it has one sensor and can only compar
 | `plot_convergence` | Mean distance vs iteration, one shaded band per N. |
 | `compare_N` | One histogram panel per N at a fixed I. |
 | `plot_biased_vs_control` | The validation figure: biased against the unbiased control. |
+| `plot_population_split` | Bar chart of which source each bacterium ended up closest to. Works for any number of sources ;  built on `nearest_source_index`. |
 
 ### `figures.py`
 
@@ -257,3 +263,17 @@ A real cell cannot perceive a gradient — it has one sensor and can only compar
 Huo H, He R, Zhang R, Yuan J (2021). *Swimming Escherichia coli cells explore the environment by Lévy walk.* Applied and Environmental Microbiology 87:e02429-20.
 
 Used for the run speed (~10 µm/s) and as the comparison for our MSD exponent. Our noise-free model gives α ≈ 0.88, close to their signalling-noise-free mutant (1.09) rather than wild type (1.66) — consistent with their conclusion that signalling noise is what produces superdiffusion.
+
+## Implementation references
+
+- Matplotlib Animation API — `PillowWriter`, `MovieWriter.saving()`, `grab_frame()`
+  https://matplotlib.org/stable/api/animation_api.html
+  Used to write each rendered frame directly to a GIF, without holding every frame in memory at once.
+
+- Matplotlib `PathCollection.set_offsets()`
+  https://matplotlib.org/stable/api/collections_api.html#matplotlib.collections.PathCollection.set_offsets
+  Used to move the bacteria scatter points to their new positions each frame, instead of redrawing the whole plot.
+
+- tqdm
+  https://tqdm.github.io/
+  Wraps the frame-writing loop to show rendering progress; optional, animation still works without it.
