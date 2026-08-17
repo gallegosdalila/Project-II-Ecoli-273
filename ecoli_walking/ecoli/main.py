@@ -11,8 +11,6 @@
 #     python -m ecoli.main --field single_source --n 10 100 1000 --iters 200 --control --store-substeps
 #     python -m ecoli.figures --field single_source
 
-# THIS FILE IS PHASE 7 -- step 37, the last one.
-
 import argparse
 from dataclasses import replace
 
