@@ -89,10 +89,6 @@ class ConcentrationField(ABC):
         return X, Y, C                                      # exactly the three arrays plt.contourf wants
 
 
-# =========================================================================
-# [2] [3] write this second
-# =========================================================================
-
 class LinearGradient(ConcentrationField):
     """Shallow ramp:  C = c0 + g . (x - x_ref)"""
 
@@ -125,10 +121,6 @@ class LinearGradient(ConcentrationField):
         return (100.0 * direction).reshape(1, 2)                       # reshape to (1, 2): a list holding one point, so callers never special-case the count
     sources = property(sources)
 
-
-# =========================================================================
-# [5] write this third (the first field checked by numerical_gradient)
-# =========================================================================
 
 class GaussianSource(ConcentrationField):
     """Single source:  C = A exp(-|x - x_s|^2 / (2 sigma^2))"""
@@ -168,10 +160,6 @@ class GaussianSource(ConcentrationField):
         return self.center.reshape(1, 2)
     sources = property(sources)
 
-
-# =========================================================================
-# [7] write this last of the three
-# =========================================================================
 
 class CompetingSources(ConcentrationField):
     """Sum of several Gaussians with different strengths."""
