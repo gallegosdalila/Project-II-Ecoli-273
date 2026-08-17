@@ -107,12 +107,17 @@ def mean_squared_displacement(result: SimulationResult) -> np.ndarray:
 
 # Mean inward speed toward the source, in um per cycle. POSITIVE means the population is closing on the source.
 # This is the single number that most cleanly separates the biased run from the unbiased control, so it is the one to put in the results table next to each condition.
-def chemotactic_drift(result: SimulationResult) -> float:
-    d = result.distances_to_source()
+#update: previously always measured the distance to source 0 with no way to opt out. For competing_sources that 
+#silently misreads a bacterium that converegd on the second peak as having failed to coverge at all since its 
+#distance to course 0 stays large even thought it succeeded. 
+def chemotactic_drift(result: SimulationResult, nearest: bool = False) -> float:
+    d = result.distances_to_nearest_source() if nearest else result.distances_to_source()
     return float((d[:, 0].mean() - d[:, -1].mean()) / result.n_iterations)   # total distance closed, divided by how many cycles it took
 
 
 # Share of the population sitting inside `radius` of the source at a given iteration. Defaults to the FINAL iteration.
-def fraction_within(result: SimulationResult, radius: float, iteration: int = -1) -> float:
-    d = result.distances_to_source()[:, iteration]
+#same fix as chemotactic_drift above, for competing sources, "with radius of the source" bit unclear, 
+#without it, and defaulting to course 0 would undercount a  popialtion that spilt across both peaks
+def fraction_within(result: SimulationResult, radius: float, iteration: int = -1, nearest: bool = False,) -> float:
+    d = (result.distances_to_nearest_source() if nearest else result.distances_to_source())[:, iteration]
     return float(np.mean(d <= radius))   # d <= radius gives an array of True/False, and the mean of a boolean array IS the fraction that are True --> no counting loop needed

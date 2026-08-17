@@ -18,7 +18,7 @@ from dataclasses import replace
 
 from .config import Config, POPULATION_SIZES, SNAPSHOT_ITERATIONS
 from .experiments import ExperimentRunner
-from .fields import FIELDS
+from .fields import FIELDS, make_field
 from .stats import chemotactic_drift, snapshot_stats
 
 
@@ -48,7 +48,12 @@ def main(argv=None) -> int:
     runner = ExperimentRunner(args.field, cfg, args.out)
     seeds = args.seeds if args.seeds else [args.seed]
 
-    print(f"field={args.field}  iters={args.iters}  direction={'ascent' if cfg.ascend else 'descent'}")
+    #update: chemotactic_drift/fraction_within/snapshots_stats all support neearests=, but this never passes it, 
+    #so --field competing_sources silently printed a table measuring distance to source 0 only. a field wih more
+    #that one source auto-switches every tbale below to "distance to whichever source is closest" instead
+    nearest = len(make_field(args.field).sources) > 1
+
+    print(f"field={args.field}  iters={args.iters}  direction={'ascent' if cfg.ascend else 'descent'}", f" measuring={ 'nearest source' if nearest else 'source 0'}")
     header = f"{'N':>6} {'seed':>5} {'mode':>8} {'d0':>8} {'dI':>8} {'drift':>8}"   # d0 is the mean STARTING distance, dI the mean FINAL distance, drift is um closed per cycle
     print(header)
     print("-" * len(header))
@@ -58,15 +63,16 @@ def main(argv=None) -> int:
             modes = [True, False] if args.control else [True]   # run the control alongside each condition only when asked, since it doubles the runtime
             for biased in modes:
                 r = runner.run_one(n_cells, seed, biased=biased)
-                d = r.distances_to_source()
-                print(f"{n_cells:>6} {seed:>5} {'biased' if biased else 'control':>8} {d[:, 0].mean():>8.2f} {d[:, -1].mean():>8.2f} {chemotactic_drift(r):>8.3f}")
+                d = r.distances_to_nearest_source() if nearest else r.distances_to_source()
+                print(f"{n_cells:>6} {seed:>5} {'biased' if biased else 'control':>8} {d[:, 0].mean():>8.2f} {d[:, -1].mean():>8.2f} {chemotactic_drift(r, nearest=nearest):>8.3f}")
 
     # The snapshot table for the largest population --> THIS IS THE RESULTS TABLE that goes in the report.
     # save=False because this run exists only to be printed; the one that gets saved already happened in the loop above.
     largest = runner.run_one(max(args.n), seeds[0], biased=True, save=False)
     print(f"\ndistance-from-source statistics, N = {largest.n_cells}")
     print(f"{'I':>6} {'mean':>9} {'median':>9} {'std':>9} {'var':>10}")
-    for i, s in snapshot_stats(largest, SNAPSHOT_ITERATIONS).items():
+
+    for i, s in snapshot_stats(largest, SNAPSHOT_ITERATIONS, nearest= nearest).items():
         print(f"{i:>6} {s['mean']:>9.2f} {s['median']:>9.2f} {s['std']:>9.2f} {s['variance']:>10.2f}")
 
     print(f"\nresults written to {runner.out_dir}/")

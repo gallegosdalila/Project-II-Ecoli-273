@@ -55,10 +55,28 @@ class SimulationResult:
 
     # Distance to whichever source happens to be CLOSEST, shape (N, I+1).
     # Needed for competing_sources, where "distance from THE source" is ambiguous --> a bacterium that found the second peak has not failed, it just picked the other basin.
-    def distances_to_nearest_source(self) -> np.ndarray:
+
+    #update: distance from every bacterium to every6source, at every iteration, 
+    #shape ( N, I+1,S)
+    #distances_to_nearest_source and nearest_source_index below both need this exact same broadcast,
+    #so it lives in one place instead of two copies that could quietly drift apart from each other.
+    def _distances_to_each_source(self) -> np.ndarray:
         src = np.atleast_2d(self.sources)                                    # (S, 2)
         diff = self.positions[:, :, None, :] - src[None, None, :, :]         # the None entries insert axes so EVERY position is paired with EVERY source --> (N, I+1, S, 2), no loop
-        return np.linalg.norm(diff, axis=-1).min(axis=-1)                    # distance to each source, then keep the smallest one per bacterium per iteration
+        return np.linalg.norm(diff, axis=-1)                   # (N, I+1,S)
+
+    #distance to whichever source happens to be closest, 
+    #shape (N, I+1)
+    def distances_to_nearest_source(self)-> np.ndarray:
+        return self._distances_to_each_source().min(axis=-1) #distance to each source, then keep the smallest one per bacterium per iteration 
+
+    #index of the source closest to each bacterium 
+    #shape: (N, I+1)
+    #replaces the inline "final[:,0] < 0" check in build_notebook.py, which only works because the two competing_source peaks
+    #happen to sit right and left fo the x=0 in the default config 
+    #per source distance is correct for any source layout 
+    def nearest_source_index(self) -> np.ndarray:
+        return self._distances_to_each_source().argmin(axis=-1)
 
     # Vector from start to finish for each bacterium, shape (N, 2). Averaged over the population this shows the NET DRIFT direction, which is what proves the walk is biased on a linear field.
     def net_displacement(self) -> np.ndarray:
