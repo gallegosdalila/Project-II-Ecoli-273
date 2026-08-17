@@ -96,7 +96,7 @@ If a needed `.npz` is missing this raises `FileNotFoundError` and prints the exa
 pytest
 ```
 
-Expected: **76 passed**.
+Expected: ** 89 passed**.
 
 ---
 
@@ -114,7 +114,8 @@ Expected: **76 passed**.
 | `ecoli/plotting.py` | Draws one figure onto one axes. Never runs a simulation. |
 | `ecoli/figures.py` | Regenerates all six report figures from saved results. |
 | `ecoli/main.py` | Command line entry point. |
-| `tests/` | 82 tests across the five modules. |
+| `ecoli/animation.py` | optional!  saves a frame-by-frame GIF of a finished run. Not imported by anything else|
+| `tests/` | 89 tests across the five modules. |
 
 Data flow: `main.py` → `experiments.py` → `simulate.py` → `results/*.npz` → `figures.py` → `figures/*.png`
 
@@ -256,13 +257,22 @@ A real cell cannot perceive a gradient — it has one sensor and can only compar
 | `build_parser` | Defines every command line flag. |
 | `main` | Runs the sweep, prints the summary and statistics tables, points at the next command. |
 
+## live animation 
+
+```bash
+python -m ecoli.animation --field competing_sources --n 30 --n-show 20 --iters 100 --save walk.gif
+```
+
+Saves a GIF: bacteria as moving dots, source(s) marked distinctly, current cycle shown as on-plot text. One frame per completed chemotaxis cycle, written with a plain `for` loop (not `matplotlib.animation.FuncAnimation`) so it's easy to read top to bottom. Lives in `ecoli/animation.py`, kept separate from `plotting.py` on purpose : `plotting.py`'s own test enforces "never runs a simulation, never needs more than a plain Axes," and an animation needs a video writer and (optionally) `tqdm`, which is different enough machinery to warrant its own file. Nothing else in the project imports it, so it's entirely optional : the rest of the pipeline and test suite are unaffected whether or not `tqdm`/`pillow` are installed.
+
+No extra install needed: Pillow ships as one of matplotlib's own dependencies, and `tqdm` is optional; the progress bar just doesn't appear if it's missing.
 ---
 
 ## Reference
 
 Huo H, He R, Zhang R, Yuan J (2021). *Swimming Escherichia coli cells explore the environment by Lévy walk.* Applied and Environmental Microbiology 87:e02429-20.
 
-Used for the run speed (~10 µm/s) and as the comparison for our MSD exponent. Our noise-free model gives α ≈ 0.88, close to their signalling-noise-free mutant (1.09) rather than wild type (1.66) — consistent with their conclusion that signalling noise is what produces superdiffusion.
+Used for the run speed (~10 µm/s) and as the comparison for our MSD exponent. Our noise-free model gives α ≈ 0.88, close to their signalling-noise-free mutant (1.09) rather than wild type (1.66) , consistent with their conclusion that signalling noise is what produces superdiffusion.
 
 ## Implementation references
 
